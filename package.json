@@ -13,7 +13,9 @@
     "axios": "^1.6.2",
     "axois": "^0.0.1-security",
     "dotenv": "^16.3.1",
-    "morgan": "^1.8.2"
+    "memcached": "^2.2.2",
+    "morgan": "^1.8.2",
+    "node-cache": "^5.1.2"
   },
   "devDependencies": {
     "axios-mock-adapter": "^1.9.0",

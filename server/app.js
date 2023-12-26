@@ -6,31 +6,36 @@ const dotenv = require('dotenv').config();
 
 app.use(morgan('tiny'));
 
-const cache = {};
+const cache = new Map();
 
 app.get('/', function (req, res) {
-    let url = req.query;
-    let apiUrl;
-    for (const key in url) {
-        if (url.hasOwnProperty(key)) {
-            console.log(url[key])
-            if (key === 'i' && cache['i'] !== undefined) {
-                apiUrl = `${process.env.APP_DOMAIN}?apikey=${process.env.APP_API_KEY}&i=${cache['i']}`;
-            } else if (key === 't' && cache['t'] !== undefined) {
-                apiUrl = `${process.env.APP_DOMAIN}?apikey=${process.env.APP_API_KEY}&t=${cache['t']}`;
-            } else {
-                apiUrl = `${process.env.APP_DOMAIN}?apikey=${process.env.APP_API_KEY}&${key}=${url[key]}`;
-                cache[key] = url[key];
-            }
-                console.log('after', cache[key]);
-                axios.get(apiUrl)
-                .then(response => {
-                    res.send(response.data);
-                })
-                .catch (error => {
-                    console.log(error.response); 
-                });
-            }
-        }
+  const url = req.query;
+  const cacheKey = JSON.stringify(url);
+  console.log(cacheKey);
+
+  if (cache.has(cacheKey)) {
+    console.log(`Information for ${cacheKey} is being pulled from cache`);
+    res.send(cache.get(cacheKey));
+    return;
+  }
+
+  let apiUrl = `${process.env.APP_DOMAIN}?apikey=${process.env.APP_API_KEY}`;
+
+  for (const key in url) {
+    apiUrl += `&${key}=${url[key]}`;
+  }
+
+  console.log(`Information is being pulled from axios`);
+  axios.get(apiUrl)
+    .then(response => {
+      const responseData = { ...response.data };
+      cache.set(cacheKey, responseData);
+      res.send(responseData);
+    })
+    .catch(error => {
+      console.error("Axios error:", error.response || error.message);
+      res.status(500).send('Internal Server Error');
     });
-    module.exports = app
+});
+
+module.exports = app;
